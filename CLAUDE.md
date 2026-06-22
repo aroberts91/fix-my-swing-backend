@@ -47,6 +47,8 @@ Data stores:
 - S3: videos, frames, annotated output, and the upload event source.
 - DynamoDB: swing records, status, analysis results as JSON. Serverless-native, scales to zero.
 
+Naming: stored DynamoDB attributes and the JSON the API returns both use snake_case. The frontend maps them to camelCase at its API client boundary.
+
 Auth: Amazon Cognito. Sign-in is optional, so the control-plane endpoints stay open and anonymous uploads work. When a valid token is present the control-plane Lambda reads the user id from it and attaches it to the swing. When it is absent the swing is anonymous. See "Accounts, anonymous uploads, and retention".
 
 Completion signal to the frontend: the frontend polls `GET /swings/{id}` for v1. WebSocket push via API Gateway WebSocket API is a later upgrade.
@@ -55,19 +57,19 @@ Completion signal to the frontend: the frontend polls `GET /swings/{id}` for v1.
 
 Uploading needs no account. Anyone can upload a swing and get analysis.
 
-If the user is signed in, the swing is tied to their account. A `userId` is stored on the record and the swing is kept.
+If the user is signed in, the swing is tied to their account. A `user_id` is stored on the record and the swing is kept.
 
 Anonymous swings are temporary. They are removed about a week after upload. The timing is approximate by design.
 
-Ownership is never encoded in the S3 key. Every object for a swing lives under a per-swing prefix, `swings/{swingId}/`. This covers the source video and any frames or annotated output. Ownership lives only in the DynamoDB record. This is what keeps claiming cheap.
+Ownership is never encoded in the S3 key. Every object for a swing lives under a per-swing prefix, `swings/{swing_id}/`. This covers the source video and any frames or annotated output. Ownership lives only in the DynamoDB record. This is what keeps claiming cheap.
 
 Retention has two mechanisms, one per store:
-- DynamoDB TTL on an `expiresAt` attribute removes the record. It is set on anonymous swings and absent on owned ones.
-- An event-driven cleanup removes the S3 objects. When TTL deletes an anonymous record, a DynamoDB Stream fires a cleanup Lambda that deletes everything under `swings/{swingId}/`. Planned, built with the pipeline.
+- DynamoDB TTL on an `expires_at` attribute removes the record. It is set on anonymous swings and absent on owned ones.
+- An event-driven cleanup removes the S3 objects. When TTL deletes an anonymous record, a DynamoDB Stream fires a cleanup Lambda that deletes everything under `swings/{swing_id}/`. Planned, built with the pipeline.
 
-Claiming an anonymous swing: the results view can offer signup. Signing up claims the swing by setting `userId` and clearing `expiresAt`. The record then stops expiring, the cleanup never fires, and the S3 objects survive. No objects move. Planned.
+Claiming an anonymous swing: the results view can offer signup. Signing up claims the swing by setting `user_id` and clearing `expires_at`. The record then stops expiring, the cleanup never fires, and the S3 objects survive. No objects move. Planned.
 
-Build sequence. The data model is built now: optional `userId`, `expiresAt`, and the per-swing key prefix, plus DynamoDB TTL on the table. The claim endpoint, the Stream-driven S3 cleanup, and Cognito come later.
+Build sequence. The data model is built now: optional `user_id`, `expires_at`, and the per-swing key prefix, plus DynamoDB TTL on the table. The claim endpoint, the Stream-driven S3 cleanup, and Cognito come later.
 
 ## Repo structure (one repo, separate CDK stacks)
 
