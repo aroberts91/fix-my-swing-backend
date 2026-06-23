@@ -32,7 +32,7 @@ class DataStack(Stack):
             self,
             "SwingsTable",
             partition_key=dynamodb.Attribute(
-                name="swingId",
+                name="swing_id",
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,

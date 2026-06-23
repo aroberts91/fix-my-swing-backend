@@ -6,9 +6,15 @@ import uuid
 
 from fastapi import APIRouter, HTTPException
 from botocore.exceptions import ClientError
+from botocore.config import Config
 from schemas import CreateSwingRequest
 
-s3_client = boto3.client("s3")
+s3_client = boto3.client(
+      "s3",
+      region_name=os.environ["AWS_REGION"],
+      config=Config(signature_version="s3v4", s3={"addressing_style": "virtual"}),
+)
+
 dynamodb = boto3.resource("dynamodb")
 
 table = dynamodb.Table(os.environ["SWINGS_TABLE_NAME"])
