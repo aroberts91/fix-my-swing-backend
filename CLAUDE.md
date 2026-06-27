@@ -47,7 +47,7 @@ Data stores:
 - S3: videos, frames, annotated output, and the upload event source.
 - DynamoDB: swing records, status, analysis results as JSON. Serverless-native, scales to zero.
 
-Naming: stored DynamoDB attributes and the JSON the API returns both use snake_case. The frontend maps them to camelCase at its API client boundary.
+Naming: Python code and stored DynamoDB attributes use snake_case. The API wire format is camelCase. FastAPI request and response models convert at the boundary with a Pydantic alias generator (`to_camel` with `populate_by_name`), so handlers and storage stay snake_case while the JSON is camelCase. The frontend is camelCase throughout and does no mapping.
 
 Auth: Amazon Cognito. Sign-in is optional, so the control-plane endpoints stay open and anonymous uploads work. When a valid token is present the control-plane Lambda reads the user id from it and attaches it to the swing. When it is absent the swing is anonymous. See "Accounts, anonymous uploads, and retention".
 

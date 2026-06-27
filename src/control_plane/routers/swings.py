@@ -7,7 +7,7 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from botocore.exceptions import ClientError
 from botocore.config import Config
-from schemas import CreateSwingRequest
+from schemas import CreateSwingRequest, CreateSwingResponse, Swing
 
 s3_client = boto3.client(
       "s3",
@@ -22,7 +22,7 @@ table = dynamodb.Table(os.environ["SWINGS_TABLE_NAME"])
 router = APIRouter(prefix="/swings", tags=["swings"])
 
 @router.post("")
-def create_swing(payload: CreateSwingRequest):
+def create_swing(payload: CreateSwingRequest) -> CreateSwingResponse:
     swing_id = uuid.uuid4().hex
     user_id = None
 
@@ -69,13 +69,17 @@ def create_swing(payload: CreateSwingRequest):
         logging.error(e)
         raise HTTPException(status_code=500, detail="Could not create upload URL")
 
-    return {"swing_id": swing_id, "upload_url": upload_url, "s3_key": s3_key}
+    return CreateSwingResponse(
+        swing_id=swing_id,
+        upload_url=upload_url,
+        s3_key=s3_key
+    )
 
 @router.get("/{swing_id}")
-def get_swing(swing_id: str):
+def get_swing(swing_id: str) -> Swing:
     response = table.get_item(Key={"swing_id": swing_id})
 
     if "Item" not in response:
         raise HTTPException(status_code=404, detail="Swing not found")
 
-    return response["Item"]
+    return Swing(**response["Item"])
