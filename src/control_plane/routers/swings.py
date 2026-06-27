@@ -7,7 +7,7 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from botocore.exceptions import ClientError
 from botocore.config import Config
-from schemas import CreateSwingRequest, CreateSwingResponse, Swing
+from schemas import CreateSwingRequest, CreateSwingResponse, SwingResponse, Swing
 
 s3_client = boto3.client(
       "s3",
@@ -30,21 +30,18 @@ def create_swing(payload: CreateSwingRequest) -> CreateSwingResponse:
 
     now = datetime.datetime.now(datetime.timezone.utc)
 
-    item = {
-        "swing_id": swing_id,
-        "status": "uploading",
-        "created_at": now.isoformat(),
-        "s3_key": s3_key,
-        "content_type": payload.content_type,
-    }
-
-    if user_id:
-        item["user_id"] = user_id
-    else:
-        item["expires_at"] = int((now + datetime.timedelta(days=7)).timestamp())
+    swing = Swing(
+        swing_id=swing_id,
+        status="uploading",
+        created_at=now.isoformat(),
+        content_type=payload.content_type,
+        s3_key=s3_key,
+        user_id=user_id,
+        expires_at=None if user_id else int((now + datetime.timedelta(days=7)).timestamp()),
+    )
 
     try:
-        table.put_item(Item=item)
+        table.put_item(Item=swing.model_dump(exclude_none=True))
     except ClientError as e:
         logging.error(
             "Couldn't add swing %s to table %s. Here's why: %s: %s",
@@ -76,10 +73,10 @@ def create_swing(payload: CreateSwingRequest) -> CreateSwingResponse:
     )
 
 @router.get("/{swing_id}")
-def get_swing(swing_id: str) -> Swing:
+def get_swing(swing_id: str) -> SwingResponse:
     response = table.get_item(Key={"swing_id": swing_id})
 
     if "Item" not in response:
         raise HTTPException(status_code=404, detail="Swing not found")
 
-    return Swing(**response["Item"])
+    return SwingResponse(**response["Item"])

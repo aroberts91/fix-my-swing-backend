@@ -4,7 +4,7 @@ from pydantic.alias_generators import to_camel
 class ConvertedModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
-        populate_by_name=True
+        populate_by_name=True,
     )
 
 class CreateSwingRequest(ConvertedModel):
@@ -15,8 +15,13 @@ class CreateSwingResponse(ConvertedModel):
     upload_url: str
     s3_key: str
 
-class Swing(ConvertedModel):
+class SwingResponse(ConvertedModel):
     swing_id: str
-    content_type: str
-    created_at: str
     status: str
+    created_at: str
+    content_type: str
+
+class Swing(SwingResponse):
+    s3_key: str
+    expires_at: int | None = None
+    user_id: str | None = None
