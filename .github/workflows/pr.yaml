@@ -30,11 +30,20 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Install control-plane dependencies
+        run: pip install -r src/control_plane/requirements.txt
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: eu-west-2
+
+      - name: Run tests
+        run: pytest
 
       - name: Synthesise CDK app
         run: cdk synth
