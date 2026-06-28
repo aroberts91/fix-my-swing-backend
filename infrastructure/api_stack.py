@@ -16,7 +16,7 @@ class ApiStack(Stack):
             self,
             "ControlPlaneHandler",
             runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="app.handler",
+            handler="main.handler",
             code=lambda_.Code.from_asset(
                 "src/control_plane",
                 bundling=BundlingOptions(
