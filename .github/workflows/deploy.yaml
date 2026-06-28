@@ -41,5 +41,14 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: eu-west-2
 
+      - name: Install control-plane dependencies
+        run: pip install -r src/control_plane/requirements.txt
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest
+
       - name: Deploy
         run: cdk deploy --all --require-approval never
